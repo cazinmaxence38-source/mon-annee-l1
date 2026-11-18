@@ -202,7 +202,7 @@ const ONLINE=!CFG.url.startsWith('__');
 const H={apikey:CFG.key,'Content-Type':'application/json'};
 let KEY=null;try{KEY=localStorage.getItem('l1key')}catch(e){}
 {const m=location.hash.match(/^#edit-([a-z0-9]{24,})$/i);if(m){KEY=m[1];try{localStorage.setItem('l1key',KEY)}catch(e){}history.replaceState(null,'',location.pathname+location.search)}}
-let RO=!KEY||location.hash==='#vue';
+let RO=!KEY||location.hash==='#vue';const NOKEY=!KEY&&location.hash!=='#vue';
 if(RO){try{const v=JSON.parse(localStorage.getItem('l1view')||'null');if(v){S=Object.assign(DEF(),v.data);T=v.t}else{S=DEF();T=0}}catch(e){}}
 const score=x=>{if(!x)return 0;const k=o=>o?Object.keys(o).length:0;return (x.sessions||[]).length*3+(x.grades||[]).length*3+(x.tasks||[]).length*2+(x.errors||[]).length*2+(x.sport||[]).length*2+(x.sleep||[]).length+k(x.val)*2+k(x.planDone)+k(x.prio)+k(x.defi)+k(x.routine&&x.routine.done)};
 let wT=null,writing=false,again=false,synced=false,remoteT=0;const T0=T;
@@ -401,7 +401,7 @@ function vHome(){const t=today(),d=new Date(),st=streak(),mt=minsOn(t),ws=wStart
  const rd=S.routine.done[t]||{am:[],pm:[]},rTot=S.routine.am.length+S.routine.pm.length,rDone=rd.am.length+rd.pm.length;
  const hr=d.getHours(),hi=hr<12?'Bonjour':hr<18?'Bon après-midi':'Bonsoir';
  const wkMin=minsRange(ws,addD(ws,6)),avg=avgAll();
- return (RO?head('Suivi de la semaine',DL[dow(t)]+' '+fd(t)+' · lecture seule')+`<section class="card" style="margin-bottom:14px"><div class="row" style="gap:24px"><div><div class="small muted" style="font-weight:700">Révisé cette semaine</div><div class="kpi">${fm(wkMin)}</div></div><div><div class="small muted" style="font-weight:700">Aujourd’hui</div><div class="kpi">${fm(mt)}</div></div><div><div class="small muted" style="font-weight:700">Série</div><div class="kpi" style="color:var(--fire)">${st} j</div></div><div><div class="small muted" style="font-weight:700">Moyenne</div><div class="kpi">${avg==null?'—':avg.toFixed(2)}</div></div><div><div class="small muted" style="font-weight:700">Sport</div><div class="kpi">${S.sport.filter(x=>x.date>=ws).length}/${S.sportGoal}</div></div></div><p class="note">${T?'Mis à jour le '+new Date(T).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'Pas encore de données'}. La page se rafraîchit toute seule.</p></section>`:head(hi,DL[dow(t)]+' '+fd(t)))+`
+ return (RO?head('Suivi de la semaine',DL[dow(t)]+' '+fd(t)+' · lecture seule')+`<section class="card" style="margin-bottom:14px"><div class="row" style="gap:24px"><div><div class="small muted" style="font-weight:700">Révisé cette semaine</div><div class="kpi">${fm(wkMin)}</div></div><div><div class="small muted" style="font-weight:700">Aujourd’hui</div><div class="kpi">${fm(mt)}</div></div><div><div class="small muted" style="font-weight:700">Série</div><div class="kpi" style="color:var(--fire)">${st} j</div></div><div><div class="small muted" style="font-weight:700">Moyenne</div><div class="kpi">${avg==null?'—':avg.toFixed(2)}</div></div><div><div class="small muted" style="font-weight:700">Sport</div><div class="kpi">${S.sport.filter(x=>x.date>=ws).length}/${S.sportGoal}</div></div></div><p class="note">${T?'Mis à jour le '+new Date(T).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'Pas encore de données'}. La page se rafraîchit toute seule.</p>${NOKEY?`<button class="btn ghost" data-unlock style="width:100%;margin-top:12px">C’est ton appli ? Déverrouiller l’édition</button>`:''}</section>`:head(hi,DL[dow(t)]+' '+fd(t)))+`
  ${dow(t)===6?`<button class="card mi" data-go="bilan" style="width:100%;margin-bottom:14px;background:var(--amber);color:#101418"><b>C’est dimanche : ton bilan de la semaine est prêt</b><span>Heures, sport, série et priorités de la semaine prochaine</span></button>`:''}
  <div class="grid two">
  <section class="hero">
@@ -491,7 +491,7 @@ function vSport(){const t=today(),ws=wStart(t),wk=S.sport.filter(x=>x.date>=ws);
 
 /* Plus */
 function vMore(){if(pg)return (P[pg]||vMenu)();return vMenu()}
-function vMenu(){const a=avgAll(),t=today();return head('Plus','Organisation, notes et habitudes')+`<div class="menu">
+function vMenu(){const a=avgAll(),t=today();return head('Plus','Organisation, notes et habitudes')+(NOKEY?`<button class="btn pri" data-unlock style="width:100%;margin-bottom:14px">Déverrouiller l’édition</button>`:'')+`<div class="menu">
  ${[['badges','Niveau & badges','Niv. '+level().l+' · '+level().title],['tasks','Tâches',S.tasks.filter(x=>!x.done).length+' en cours'],['grades','Notes & moyenne',a==null?'Aucune note':'Moyenne '+a.toFixed(2)+' / 20'],['errors','Carnet d’erreurs',S.errors.filter(e=>e.next<=t).length+' à revoir aujourd’hui'],['routine','Routine & sommeil','Matin, soir, heures de sommeil'],['bilan','Bilan de la semaine','Le récap du dimanche'],['settings','Réglages','Matières, partiels, objectifs']].map(m=>`<button class="mi" data-go="${m[0]}"><b>${m[1]}</b><span class="small muted">${m[2]}</span></button>`).join('')}</div>`}
 const back='<button class="back" data-go="">‹ Plus</button>';
 const P={
@@ -560,11 +560,14 @@ error:(x)=>form(x?'Modifier l’erreur':'Noter une erreur',[{k:'subj',l:'Matièr
 sleep:()=>form('Ajouter une nuit',[{k:'date',l:'Nuit du',t:'date',d:addD(today(),-1)},{k:'bed',l:'Coucher',t:'time',d:'23:00'},{k:'wake',l:'Lever',t:'time',d:'07:00'}],null,o=>{let m=tm(o.wake)-tm(o.bed);if(m<=0)m+=1440;S.sleep=S.sleep.filter(s=>s.date!==o.date);S.sleep.push({date:o.date,h:m/60})}),
 subject:(x)=>form(x?'Modifier la matière':'Nouvelle matière',[{k:'name',l:'Nom complet',r:1},{k:'short',l:'Nom court',r:1},{k:'color',l:'Couleur',t:'select',o:Object.entries(PAL).map(([n,c])=>[c,n])},{k:'coef',l:'Coefficient (ECTS)',t:'number',d:1},{k:'goal',l:'Objectif de révision (h / semaine)',t:'number',d:3},{k:'exam',l:'Date du partiel',t:'date'}],x,o=>{if(x)Object.assign(x,o);else S.subjects.push({id:uid(),...o})},x&&S.subjects.length>1?()=>{S.subjects=S.subjects.filter(s=>s!==x);S.slots=S.slots.filter(s=>s.subj!==x.id)}:null),
 goals:()=>form('Objectifs',[{k:'dailyGoal',l:'Révision par jour (minutes)',t:'number'},{k:'sportGoal',l:'Séances de sport par semaine',t:'number'},{k:'target',l:'Moyenne visée (/20)',t:'number'}],S,o=>{S.dailyGoal=Math.max(10,o.dailyGoal);S.sportGoal=Math.max(1,o.sportGoal);S.target=o.target}),
+unlock:()=>form('Déverrouiller l’édition',[{k:'k',l:'Colle ton lien d’édition ou ta clé secrète',t:'area',r:1}],null,o=>{const m=String(o.k).match(/([a-f0-9]{24,})/i);if(!m){setTimeout(()=>toast('Je ne trouve pas de clé dans ce texte'),50);return}
+ rpc('verifier',{p_cle:m[1]}).then(ok=>{if(!ok){toast('Clé refusée : vérifie-la');return}try{localStorage.setItem('l1key',m[1])}catch(e){}toast('Édition déverrouillée');setTimeout(()=>{location.hash='';location.reload()},600)}).catch(()=>toast('Pas de connexion, réessaie'))}),
 import:()=>form('Importer une sauvegarde',[{k:'j',l:'Colle ici le texte copié avec « Copier ma sauvegarde »',t:'area',r:1}],null,o=>{try{restore(o.j)}catch(e){setTimeout(()=>toast('Ce texte n’est pas une sauvegarde valide'),50)}}),
 rout:(k)=>form(k==='am'?'Routine du matin':'Routine du soir',[{k:'items',l:'Une habitude par ligne',t:'area'}],{items:S.routine[k].join('\n')},o=>{S.routine[k]=o.items.split('\n').map(s=>s.trim()).filter(Boolean);delete S.routine.done[today()]})
 };
 
 document.addEventListener('click',e=>{const b=e.target.closest('button,[data-edtask],[data-edsport],[data-rv]');if(!b)return;const d=b.dataset;
+ if(d.unlock!==undefined)return ADD.unlock();
  if(RO&&!('close' in d)&&!['tab','go','day','wk','rv','fs','pre'].some(k=>k in d))return;
  if(d.copy){const u=d.copy==='v'?baseURL()+'#vue':baseURL()+'#edit-'+KEY;navigator.clipboard.writeText(u).then(()=>toast(d.copy==='v'?'Lien spectateur copié':'Ton lien d’édition est copié : garde-le pour toi'),()=>toast('Copie impossible : '+u));return}
  if(d.newkey!==undefined){if(!confirm('Changer ta clé ? Ton ancien lien d’édition ne marchera plus sur aucun appareil.'))return;const k=newKey();rpc('changer_cle',{p_cle:KEY,p_nouvelle:k}).then(()=>{KEY=k;try{localStorage.setItem('l1key',k)}catch(e){}render();toast('Nouvelle clé active : recopie ton lien d’édition')}).catch(()=>toast('Impossible de changer la clé (hors ligne ?)'));return}
